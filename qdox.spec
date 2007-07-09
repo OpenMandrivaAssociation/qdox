@@ -31,19 +31,18 @@
 %define gcj_support 1
 
 Name:           qdox
-Version:        1.5
-Release:        %mkrel 2.1.1
+Version:        1.6.3
+Release:        %mkrel 1.1.1
 Epoch:          0
 Summary:        Extract class/interface/method definitions from sources
 License:        Apache License
 URL:            http://qdox.codehaus.org/
 Group:          Development/Java
-Source0:        qdox-1.5-src.tar.gz
-#svn export http://svn.codehaus.org/qdox/tags/QDOX_1_5/qdox/
-#tar czvf qdox-1.5-src.tar.gz qdox
+Source0:        qdox-1.6.3.tar.bz2
+#svn export http://svn.codehaus.org/qdox/tags/QDOX_1_6_3
+#tar cvjf qdox-1.6.3.tar.gz qdox-1.6.3
 Source1:        qdox-build.xml
 Source2:        qdox-LocatedDef.java
-Patch0:         qdox-1.5-parser_y.patch
 BuildRequires:  jpackage-utils >= 0:1.6
 BuildRequires:  ant >= 0:1.6
 BuildRequires:  ant-junit >= 0:1.6
@@ -79,11 +78,10 @@ Group:          Development/Java
 %{summary}.
 
 %prep
-%setup -q -n %{name}
+%setup -q
 cp %{SOURCE2} src/java/com/thoughtworks/qdox/parser/structs/LocatedDef.java 
 cp %{SOURCE1} build.xml
 
-%patch0 -b .sav
 #Remove files which needed jmock
 rm src/test/com/thoughtworks/qdox/parser/MockBuilder.java
 rm src/test/com/thoughtworks/qdox/parser/MockLexer.java
