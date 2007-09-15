@@ -32,7 +32,7 @@
 
 Name:           qdox
 Version:        1.6.3
-Release:        %mkrel 1.1.1
+Release:        %mkrel 1.1.2
 Epoch:          0
 Summary:        Extract class/interface/method definitions from sources
 License:        Apache License
@@ -54,8 +54,6 @@ BuildRequires:  byaccj
 Requires:       jpackage-utils
 Requires:       java
 %if %{gcj_support}
-Requires(post): java-gcj-compat
-Requires(postun): java-gcj-compat
 BuildRequires:  java-gcj-compat-devel
 %else
 BuildArch:      noarch
