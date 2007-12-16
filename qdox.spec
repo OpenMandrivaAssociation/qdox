@@ -32,7 +32,7 @@
 
 Name:           qdox
 Version:        1.6.3
-Release:        %mkrel 1.1.2
+Release:        %mkrel 1.1.3
 Epoch:          0
 Summary:        Extract class/interface/method definitions from sources
 License:        Apache License
@@ -43,7 +43,7 @@ Source0:        qdox-1.6.3.tar.bz2
 #tar cvjf qdox-1.6.3.tar.gz qdox-1.6.3
 Source1:        qdox-build.xml
 Source2:        qdox-LocatedDef.java
-BuildRequires:  jpackage-utils >= 0:1.6
+BuildRequires:  java-rpmbuild >= 0:1.6
 BuildRequires:  ant >= 0:1.6
 BuildRequires:  ant-junit >= 0:1.6
 BuildRequires:  ant-nodeps >= 0:1.6
