@@ -28,19 +28,19 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-%define gcj_support 1
+%define gcj_support 0
 
 Name:           qdox
-Version:        1.6.3
-Release:        %mkrel 1.1.5
+Version:        1.9.2
+Release:        %mkrel 1
 Epoch:          0
 Summary:        Extract class/interface/method definitions from sources
 License:        Apache License
 URL:            http://qdox.codehaus.org/
 Group:          Development/Java
-Source0:        qdox-1.6.3.tar.bz2
-#svn export http://svn.codehaus.org/qdox/tags/QDOX_1_6_3
-#tar cvjf qdox-1.6.3.tar.gz qdox-1.6.3
+Source0:        %{name}-%{version}.tar.bz2
+#svn export http://svn.codehaus.org/qdox/tags/qdox-%{version}
+#tar cvjf qdox-%{version}.tar.gz qdox-%{version}
 Source1:        qdox-build.xml
 Source2:        qdox-LocatedDef.java
 BuildRequires:  java-rpmbuild >= 0:1.6
