@@ -32,7 +32,7 @@
 
 Name:           qdox
 Version:        1.9.2
-Release:        %mkrel 1
+Release:        %mkrel 2
 Epoch:          0
 Summary:        Extract class/interface/method definitions from sources
 License:        Apache License
