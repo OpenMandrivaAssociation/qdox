@@ -32,7 +32,7 @@
 
 Name:           qdox
 Version:        1.9.2
-Release:        %mkrel 5
+Release:        %mkrel 6
 Epoch:          0
 Summary:        Extract class/interface/method definitions from sources
 License:        Apache License
@@ -100,25 +100,25 @@ CLASSPATH=target/classes:target/test-classes:$CLASSPATH
 %{ant} -Dbuild.sysclasspath=only jar javadoc
 
 %install
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 # jars
-mkdir -p $RPM_BUILD_ROOT%{_javadir}
+mkdir -p %{buildroot}%{_javadir}
 cp -p build/%{name}.jar \
-      $RPM_BUILD_ROOT%{_javadir}/%{name}-%{version}.jar
-(cd $RPM_BUILD_ROOT%{_javadir} && for jar in *-%{version}.jar; \
+      %{buildroot}%{_javadir}/%{name}-%{version}.jar
+(cd %{buildroot}%{_javadir} && for jar in *-%{version}.jar; \
 do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
 
 # javadoc
-mkdir -p $RPM_BUILD_ROOT%{_javadocdir}/%{name}
-cp -pr build/javadocdir/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
+mkdir -p %{buildroot}%{_javadocdir}/%{name}
+cp -pr build/javadocdir/* %{buildroot}%{_javadocdir}/%{name}
 
 %if %{gcj_support}
 %{_bindir}/aot-compile-rpm
 %endif
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 %if %{gcj_support}
 %post
