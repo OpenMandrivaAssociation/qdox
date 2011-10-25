@@ -31,7 +31,7 @@
 Summary:        Extract class/interface/method definitions from sources
 Name:           qdox
 Version:        1.12
-Release:        3
+Release:        2
 License:        ASL 2.0
 URL:            http://qdox.codehaus.org/
 Group:          Development/Java
@@ -74,6 +74,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
 Obsoletes:      qdox-manual <= 0:1.9.2
 
+
 %description
 QDox is a high speed, small footprint parser
 for extracting class/interface/method definitions
@@ -113,30 +114,30 @@ mvn-jpp \
         ant:ant install javadoc:javadoc
 
 %install
-rm -rf %{buildroot}
+rm -rf $RPM_BUILD_ROOT
 
 # jars
-mkdir -p %{buildroot}%{_javadir}
+mkdir -p $RPM_BUILD_ROOT%{_javadir}
 cp -p target/%{name}-%{version}.jar \
-      %{buildroot}%{_javadir}/%{name}-%{version}.jar
-(cd %{buildroot}%{_javadir} && for jar in *-%{version}.jar; do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
+      $RPM_BUILD_ROOT%{_javadir}/%{name}-%{version}.jar
+(cd $RPM_BUILD_ROOT%{_javadir} && for jar in *-%{version}.jar; do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
 
 %add_to_maven_depmap %{name} %{name} %{version} JPP %{name}
 %add_to_maven_depmap  com.thoughtworks.qdox qdox %{version} JPP %{name}
 
 
 # poms
-install -d -m 755 %{buildroot}%{_mavenpomdir}
+install -d -m 755 $RPM_BUILD_ROOT%{_mavenpomdir}
 install -m 644 pom.xml \
-    %{buildroot}%{_mavenpomdir}/JPP-%{name}.pom
+    $RPM_BUILD_ROOT%{_mavenpomdir}/JPP-%{name}.pom
 
 # javadoc
-mkdir -p %{buildroot}%{_javadocdir}/%{name}-%{version}
-cp -pr target/apidocs/* %{buildroot}%{_javadocdir}/%{name}-%{version}
-ln -s %{name}-%{version} %{buildroot}%{_javadocdir}/%{name}
+mkdir -p $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
+cp -pr target/apidocs/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
+ln -s %{name}-%{version} $RPM_BUILD_ROOT%{_javadocdir}/%{name}
 
 %clean
-rm -rf %{buildroot}
+rm -rf $RPM_BUILD_ROOT
 
 %post
 %update_maven_depmap
