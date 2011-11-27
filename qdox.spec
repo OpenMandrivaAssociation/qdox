@@ -31,7 +31,7 @@
 Summary:        Extract class/interface/method definitions from sources
 Name:           qdox
 Version:        1.12
-Release:        3
+Release:        5
 License:        ASL 2.0
 URL:            http://qdox.codehaus.org/
 Group:          Development/Java
