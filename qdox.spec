@@ -114,30 +114,30 @@ mvn-jpp \
         ant:ant install javadoc:javadoc
 
 %install
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 # jars
-mkdir -p $RPM_BUILD_ROOT%{_javadir}
+mkdir -p %{buildroot}%{_javadir}
 cp -p target/%{name}-%{version}.jar \
-      $RPM_BUILD_ROOT%{_javadir}/%{name}-%{version}.jar
-(cd $RPM_BUILD_ROOT%{_javadir} && for jar in *-%{version}.jar; do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
+      %{buildroot}%{_javadir}/%{name}-%{version}.jar
+(cd %{buildroot}%{_javadir} && for jar in *-%{version}.jar; do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
 
 %add_to_maven_depmap %{name} %{name} %{version} JPP %{name}
 %add_to_maven_depmap  com.thoughtworks.qdox qdox %{version} JPP %{name}
 
 
 # poms
-install -d -m 755 $RPM_BUILD_ROOT%{_mavenpomdir}
+install -d -m 755 %{buildroot}%{_mavenpomdir}
 install -m 644 pom.xml \
-    $RPM_BUILD_ROOT%{_mavenpomdir}/JPP-%{name}.pom
+    %{buildroot}%{_mavenpomdir}/JPP-%{name}.pom
 
 # javadoc
-mkdir -p $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
-cp -pr target/apidocs/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}-%{version}
-ln -s %{name}-%{version} $RPM_BUILD_ROOT%{_javadocdir}/%{name}
+mkdir -p %{buildroot}%{_javadocdir}/%{name}-%{version}
+cp -pr target/apidocs/* %{buildroot}%{_javadocdir}/%{name}-%{version}
+ln -s %{name}-%{version} %{buildroot}%{_javadocdir}/%{name}
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 %post
 %update_maven_depmap
