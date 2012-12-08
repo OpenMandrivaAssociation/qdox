@@ -1,4 +1,4 @@
-# Copyright (c) 2000-2009, JPackage Project
+# Copyright (c) 2000-2005, JPackage Project
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,133 +28,186 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-Summary:        Extract class/interface/method definitions from sources
+%define gcj_support 0
+
 Name:           qdox
-Version:        1.12
-Release:        5
-License:        ASL 2.0
+Version:        1.9.2
+Release:        %mkrel 5
+Epoch:          0
+Summary:        Extract class/interface/method definitions from sources
+License:        Apache License
 URL:            http://qdox.codehaus.org/
 Group:          Development/Java
-Source0:        http://repo2.maven.org/maven2/com/thoughtworks/qdox/qdox/%{version}/%{name}-%{version}-project.tar.bz2
-Patch0:         %{name}-disable-xsite.patch
-
-BuildRequires:  jpackage-utils >= 0:1.7.4
-BuildRequires:  java-devel >= 0:1.6.0
+Source0:        %{name}-%{version}.tar.bz2
+#svn export http://svn.codehaus.org/qdox/tags/qdox-%{version}
+#tar cvjf qdox-%{version}.tar.gz qdox-%{version}
+Source1:        qdox-build.xml
+Source2:        qdox-LocatedDef.java
+BuildRequires:  java-rpmbuild >= 0:1.6
 BuildRequires:  ant >= 0:1.6
 BuildRequires:  ant-junit >= 0:1.6
+BuildRequires:  ant-nodeps >= 0:1.6
 BuildRequires:  junit >= 0:3.8.1
-BuildRequires:  byaccj
+BuildRequires:  java-cup
 BuildRequires:  jflex
-BuildRequires:  maven2 >= 2.0.7
-BuildRequires:  maven-ant-plugin
-BuildRequires:  maven-antrun-plugin
-BuildRequires:  maven-assembly-plugin
-BuildRequires:  maven-compiler-plugin
-BuildRequires:  maven-changes-plugin
-BuildRequires:  maven-clean-plugin
-BuildRequires:  maven-plugin-cobertura
-BuildRequires:  maven-dependency-plugin
-BuildRequires:  maven-deploy-plugin
-BuildRequires:  maven-install-plugin
-BuildRequires:  maven-jar-plugin
-BuildRequires:  maven-javadoc-plugin
-BuildRequires:  maven-site-plugin
-BuildRequires:  maven-resources-plugin
-BuildRequires:  maven-surefire-plugin
-BuildRequires:  maven-surefire-provider-junit
-BuildRequires:  maven-jflex-plugin
-BuildRequires:  maven-release-plugin
-
-Requires:          java >= 0:1.6.0
-Requires(post):    jpackage-utils >= 0:1.7.4
-Requires(postun):  jpackage-utils >= 0:1.7.4
-
+BuildRequires:  byaccj
+Requires:       jpackage-utils
+Requires:       java
+%if %{gcj_support}
+BuildRequires:  java-gcj-compat-devel
+%else
 BuildArch:      noarch
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot
-
-Obsoletes:      qdox-manual <= 0:1.9.2
-
+BuildRequires:  java-devel
+%endif
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
-QDox is a high speed, small footprint parser
-for extracting class/interface/method definitions
-from source files complete with JavaDoc @tags.
-It is designed to be used by active code
-generators or documentation tools.
+QDox is a high speed, small footprint parser 
+for extracting class/interface/method definitions 
+from source files complete with JavaDoc @tags. 
+It is designed to be used by active code 
+generators or documentation tools. 
 
 %package javadoc
 Summary:        Javadoc for %{name}
 Group:          Development/Java
-Requires:       jpackage-utils
 
 %description javadoc
-API docs for %{name}.
-
+%{summary}.
 
 %prep
-%setup -q 
-%patch0 -b .sav
-for j in $(find . -name "*.jar"); do
-    mv $j $j.no
-done
-rm bootstrap/yacc.*
-ln -s /usr/bin/byaccj bootstrap/yacc.linux
-ln -s /usr/bin/byaccj bootstrap/yacc.linux.x86_64
-ln -s $(build-classpath jflex) bootstrap
-#ln -s $(build-classpath java-cup) bootstrap
+%setup -q
+cp %{SOURCE2} src/java/com/thoughtworks/qdox/parser/structs/LocatedDef.java 
+cp %{SOURCE1} build.xml
+
+#Remove files which needed jmock
+rm src/test/com/thoughtworks/qdox/parser/MockBuilder.java
+rm src/test/com/thoughtworks/qdox/parser/MockLexer.java
+rm src/test/com/thoughtworks/qdox/parser/ParserTest.java
+rm src/test/com/thoughtworks/qdox/directorywalker/DirectoryScannerTest.java
+
+%{__perl} -pi -e 's/fork="yes"/fork="no"/g;' build.xml
+%{__perl} -pi -e 's/yy_lexical_state/zzLexicalState/g;' src/grammar/lexer.flex
 
 %build
-export MAVEN_REPO_LOCAL=$(pwd)/.m2/repository
-mkdir -p $MAVEN_REPO_LOCAL
-
-mvn-jpp \
-        -e \
-        -Dmaven.test.skip=true \
-        -Dmaven.repo.local=$MAVEN_REPO_LOCAL \
-        ant:ant install javadoc:javadoc
+export CLASSPATH=$(build-classpath \
+ant \
+ant-launcher \
+java-cup \
+jflex \
+junit)
+CLASSPATH=target/classes:target/test-classes:$CLASSPATH
+%{ant} -Dbuild.sysclasspath=only jar javadoc
 
 %install
-rm -rf %{buildroot}
+rm -rf $RPM_BUILD_ROOT
 
 # jars
-mkdir -p %{buildroot}%{_javadir}
-cp -p target/%{name}-%{version}.jar \
-      %{buildroot}%{_javadir}/%{name}-%{version}.jar
-(cd %{buildroot}%{_javadir} && for jar in *-%{version}.jar; do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
-
-%add_to_maven_depmap %{name} %{name} %{version} JPP %{name}
-%add_to_maven_depmap  com.thoughtworks.qdox qdox %{version} JPP %{name}
-
-
-# poms
-install -d -m 755 %{buildroot}%{_mavenpomdir}
-install -m 644 pom.xml \
-    %{buildroot}%{_mavenpomdir}/JPP-%{name}.pom
+mkdir -p $RPM_BUILD_ROOT%{_javadir}
+cp -p build/%{name}.jar \
+      $RPM_BUILD_ROOT%{_javadir}/%{name}-%{version}.jar
+(cd $RPM_BUILD_ROOT%{_javadir} && for jar in *-%{version}.jar; \
+do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
 
 # javadoc
-mkdir -p %{buildroot}%{_javadocdir}/%{name}-%{version}
-cp -pr target/apidocs/* %{buildroot}%{_javadocdir}/%{name}-%{version}
-ln -s %{name}-%{version} %{buildroot}%{_javadocdir}/%{name}
+mkdir -p $RPM_BUILD_ROOT%{_javadocdir}/%{name}
+cp -pr build/javadocdir/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
+
+%if %{gcj_support}
+%{_bindir}/aot-compile-rpm
+%endif
 
 %clean
-rm -rf %{buildroot}
+rm -rf $RPM_BUILD_ROOT
 
+%if %{gcj_support}
 %post
-%update_maven_depmap
+%{update_gcjdb}
 
 %postun
-%update_maven_depmap
+%{clean_gcjdb}
+%endif
 
 %files
-%defattr(-,root,root,-)
+%defattr(0644,root,root,0755)
 %doc LICENSE.txt README.txt
 %{_javadir}/%{name}.jar
 %{_javadir}/%{name}-%{version}.jar
-%{_mavenpomdir}/*
-%{_mavendepmapfragdir}/*
+%if %{gcj_support}
+%dir %{_libdir}/gcj/%{name}
+%attr(-,root,root) %{_libdir}/gcj/%{name}/*
+%endif
 
 %files javadoc
-%defattr(-,root,root,-)
-%doc %{_javadocdir}/%{name}-%{version}
-%doc %{_javadocdir}/%{name}
+%defattr(0644,root,root,0755)
+%doc %{_javadocdir}/*
 
+
+%changelog
+* Fri Dec 03 2010 Oden Eriksson <oeriksson@mandriva.com> 0:1.9.2-4mdv2011.0
++ Revision: 607261
+- rebuild
+
+* Wed Mar 17 2010 Oden Eriksson <oeriksson@mandriva.com> 0:1.9.2-2mdv2010.1
++ Revision: 523882
+- rebuilt for 2010.1
+
+* Mon Jul 13 2009 Frederik Himpe <fhimpe@mandriva.org> 0:1.9.2-1mdv2010.0
++ Revision: 395695
+- Update to new version 1.9.2
+- Build with default Java SDK (rpmbuild-java) instead of gcj
+
+* Sat Mar 07 2009 Antoine Ginies <aginies@mandriva.com> 0:1.6.3-1.1.5mdv2009.1
++ Revision: 351584
+- rebuild
+
+* Wed Mar 05 2008 Oden Eriksson <oeriksson@mandriva.com> 0:1.6.3-1.1.4mdv2008.1
++ Revision: 179397
+- rebuild
+
+  + Olivier Blin <oblin@mandriva.com>
+    - restore BuildRoot
+
+  + Thierry Vignaud <tv@mandriva.org>
+    - kill re-definition of %%buildroot on Pixel's request
+
+  + Anssi Hannula <anssi@mandriva.org>
+    - buildrequire java-rpmbuild, i.e. build with icedtea on x86(_64)
+
+* Sat Sep 15 2007 Anssi Hannula <anssi@mandriva.org> 0:1.6.3-1.1.2mdv2008.0
++ Revision: 87347
+- rebuild to filter out autorequires of GCJ AOT objects
+- remove unnecessary Requires(post) on java-gcj-compat
+
+* Mon Jul 09 2007 David Walluck <walluck@mandriva.org> 0:1.6.3-1.1.1mdv2008.0
++ Revision: 50715
+- 1.6.3
+
+* Wed Jul 04 2007 David Walluck <walluck@mandriva.org> 0:1.5-2.1.1mdv2008.0
++ Revision: 48002
+- Import qdox
+
+
+
+* Thu Feb 15 2007 Permaine Cheung <pcheung@redhat.com> - 0:1.5-2jpp.1
+- Use ant for building, and fixes as per fedora guidelines.
+
+* Mon Feb 20 2006 Ralph Apel <r.apel at r-apel.de> - 0:1.5-2jpp
+- Rebuild for JPP-1.7, adapting to maven-1.1
+
+* Wed Nov 16 2005 Ralph Apel <r.apel at r-apel.de> - 0:1.5-1jpp
+- Upgrade to 1.5
+- Build is now done with maven and requires jflex and byaccj
+
+* Wed Aug 25 2004 Fernando Nasser <fnasser@redhat.com> - 0:1.4-3jpp
+- Rebuild with Ant 1.6.2
+
+* Fri Aug 06 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.4-2jpp
+- Upgrade to ant-1.6.X
+
+* Mon Jun 07 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.4-1jpp
+- Upgrade to 1.4
+- Drop Requires: mockobjects (Build/Test only)
+
+* Tue Feb 24 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.3-1jpp
+- First JPackage release
