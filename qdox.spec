@@ -1,16 +1,14 @@
 Name:           qdox
-Version:        1.9.2
-Release:        7
+Version:        1.12.1
+Release:        1
 Epoch:          0
 Summary:        Extract class/interface/method definitions from sources
 License:        Apache License
 URL:            http://qdox.codehaus.org/
 Group:          Development/Java
-Source0:        %{name}-%{version}.tar.bz2
+Source0:        http://repo.maven.apache.org/maven2/com/thoughtworks/qdox/qdox/%version/qdox-%version-sources.jar
 #svn export http://svn.codehaus.org/qdox/tags/qdox-%{version}
 #tar cvjf qdox-%{version}.tar.gz qdox-%{version}
-Source1:        qdox-build.xml
-Source2:        qdox-LocatedDef.java
 BuildRequires:  java-rpmbuild >= 0:1.6
 BuildRequires:  ant >= 0:1.6
 BuildRequires:  ant-junit >= 0:1.6
@@ -23,6 +21,13 @@ Requires:       jpackage-utils
 Requires:       java
 BuildArch:      noarch
 BuildRequires:  java-1.6.0-openjdk-devel
+
+%track
+prog %name = {
+	url = http://qdox.codehaus.org/download.html
+	regex = "Latest stable release - QDox (__VER__):"
+	version = %version
+}
 
 %description
 QDox is a high speed, small footprint parser 
@@ -39,46 +44,26 @@ Group:          Development/Java
 %{summary}.
 
 %prep
-%setup -q
-cp %{SOURCE2} src/java/com/thoughtworks/qdox/parser/structs/LocatedDef.java 
-cp %{SOURCE1} build.xml
-
-#Remove files which needed jmock
-rm src/test/com/thoughtworks/qdox/parser/MockBuilder.java
-rm src/test/com/thoughtworks/qdox/parser/MockLexer.java
-rm src/test/com/thoughtworks/qdox/parser/ParserTest.java
-rm src/test/com/thoughtworks/qdox/directorywalker/DirectoryScannerTest.java
-
-%{__perl} -pi -e 's/fork="yes"/fork="no"/g;' build.xml
-%{__perl} -pi -e 's/yy_lexical_state/zzLexicalState/g;' src/grammar/lexer.flex
+%setup -q -c %name-%version
 
 %build
-export CLASSPATH=$(build-classpath \
-ant \
-ant-launcher \
-java-cup \
-jflex \
-junit)
-CLASSPATH=target/classes:target/test-classes:$CLASSPATH
-%{ant} -Dbuild.sysclasspath=only jar javadoc
+find . -name "*.java" |xargs javac -classpath $(build-classpath junit ant)
+find . -name "*.class" |xargs jar cf %name-%version.jar META-INF
+find . -name "*.java" |xargs javadoc -d apidocs
 
 %install
-rm -rf $RPM_BUILD_ROOT
-
 # jars
 mkdir -p $RPM_BUILD_ROOT%{_javadir}
-cp -p build/%{name}.jar \
-      $RPM_BUILD_ROOT%{_javadir}/%{name}-%{version}.jar
+cp -p %name-%version.jar $RPM_BUILD_ROOT%{_javadir}/
 (cd $RPM_BUILD_ROOT%{_javadir} && for jar in *-%{version}.jar; \
 do ln -sf ${jar} `echo $jar| sed "s|-%{version}||g"`; done)
 
 # javadoc
 mkdir -p $RPM_BUILD_ROOT%{_javadocdir}/%{name}
-cp -pr build/javadocdir/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
+cp -pr apidocs/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
 
 %files
 %defattr(0644,root,root,0755)
-%doc LICENSE.txt README.txt
 %{_javadir}/%{name}.jar
 %{_javadir}/%{name}-%{version}.jar
 
