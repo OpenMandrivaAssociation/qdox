@@ -1,6 +1,6 @@
 Name:           qdox
 Version:        1.12.1
-Release:        1
+Release:        2
 Epoch:          0
 Summary:        Extract class/interface/method definitions from sources
 License:        Apache License
