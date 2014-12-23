@@ -25,6 +25,7 @@ BuildRequires:  maven-changes-plugin
 BuildRequires:  exec-maven-plugin
 BuildRequires:  maven-invoker-plugin
 BuildRequires:  maven-plugin-cobertura
+BuildRequires:	zip
 
 Requires:       java-headless >= 1:1.6.0
 
