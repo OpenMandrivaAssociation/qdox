@@ -1,43 +1,15 @@
 %{?_javapackages_macros:%_javapackages_macros}
-# Copyright (c) 2000-2009, JPackage Project
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the
-#    distribution.
-# 3. Neither the name of the JPackage Project nor the names of its
-#    contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+%global vertag M2
 
 Summary:        Extract class/interface/method definitions from sources
 Name:           qdox
-Version:        1.12.1
-Release:        7.1%{?dist}
+Version:        2.0
+Release:        0.1.%{vertag}.1
 Epoch:          0
 License:        ASL 2.0
 URL:            http://qdox.codehaus.org/
-
-Source0:        http://repo2.maven.org/maven2/com/thoughtworks/qdox/qdox/%{version}/%{name}-%{version}-project.tar.bz2
+Group:		Development/Java
+Source0:        http://repo2.maven.org/maven2/com/thoughtworks/qdox/qdox/%{version}-%{vertag}/%{name}-%{version}-%{vertag}-project.tar.gz
 Source1:        qdox-MANIFEST.MF
 
 BuildRequires:  jpackage-utils >= 0:1.7.4
@@ -49,22 +21,12 @@ BuildRequires:  byaccj
 BuildRequires:  jflex
 BuildRequires:  maven-local
 BuildRequires:  maven-assembly-plugin
-BuildRequires:  maven-compiler-plugin
 BuildRequires:  maven-changes-plugin
-BuildRequires:  maven-clean-plugin
+BuildRequires:  exec-maven-plugin
+BuildRequires:  maven-invoker-plugin
 BuildRequires:  maven-plugin-cobertura
-BuildRequires:  maven-dependency-plugin
-BuildRequires:  maven-deploy-plugin
-BuildRequires:  maven-install-plugin
-BuildRequires:  maven-jar-plugin
-BuildRequires:  maven-javadoc-plugin
-BuildRequires:  maven-site-plugin
-BuildRequires:  maven-surefire-plugin
-BuildRequires:  maven-surefire-provider-junit
-BuildRequires:  maven-release-plugin
-BuildRequires:  zip
 
-Requires:       java >= 1:1.6.0
+Requires:       java-headless >= 1:1.6.0
 
 BuildArch:      noarch
 Obsoletes:      qdox-manual <= 0:1.9.2
@@ -80,54 +42,33 @@ generators or documentation tools.
 %package javadoc
 Summary:        Javadoc for %{name}
 
-Requires:       jpackage-utils
-
 %description javadoc
 API docs for %{name}.
 
 
 %prep
-%setup -q 
+%setup -q -n %{name}-%{version}-%{vertag}
 find -name *.jar -delete
 rm -rf bootstrap
 
-# Ant changed groupId
-%pom_remove_dep ant:ant
-%pom_add_dep org.apache.ant:ant
-
-%pom_remove_dep jmock:jmock
 # We don't need these plugins
-%pom_remove_plugin :maven-antrun-plugin
+%pom_remove_plugin :animal-sniffer-maven-plugin
+%pom_remove_plugin :maven-failsafe-plugin
 %pom_remove_plugin :maven-jflex-plugin
-%pom_remove_plugin :maven-resources-plugin
-%pom_remove_plugin :xsite-maven-plugin
 %pom_xpath_remove pom:build/pom:extensions
 
-%build
-# Generate scanner (upstream does this with maven-jflex-plugin)
-jflex \
-      -d src/java \
-      --skel src/grammar/skeleton.inner \
-      src/grammar/lexer.flex
+%mvn_file : %{name}
+%mvn_alias : qdox:qdox
 
-# Generate parser (upstream does this with maven-antrun-plugin)
-dir=src/java/com/thoughtworks/qdox/parser/impl
-mkdir -p $dir
-(cd ./$dir
-byaccj \
-       -v \
-       -Jnorun \
-       -Jnoconstruct \
-       -Jclass=Parser \
-       -Jsemantic=Value \
-       -Jpackage=com.thoughtworks.qdox.parser.impl \
-       ../../../../../../grammar/parser.y)
+%pom_xpath_set pom:workingDirectory '${basedir}/src/main/java/com/thoughtworks/qdox/parser/impl'
+
+%build
+# Generate scanners (upstream does this with maven-jflex-plugin)
+jflex --inputstreamctor -d src/main/java/com/thoughtworks/qdox/parser/impl src/grammar/lexer.flex
+jflex --inputstreamctor -d src/main/java/com/thoughtworks/qdox/parser/impl src/grammar/commentlexer.flex
 
 # Build artifact
-mvn-rpmbuild \
-        -Dmaven.test.skip=true \
-        install \
-        javadoc:aggregate
+%mvn_build -f -- -Dqdox.byaccj.executable=byaccj
 
 # Inject OSGi manifests
 mkdir -p META-INF
@@ -136,31 +77,27 @@ touch META-INF/MANIFEST.MF
 zip -u target/%{name}-%{version}.jar META-INF/MANIFEST.MF
 
 %install
-# jars
-mkdir -p $RPM_BUILD_ROOT%{_javadir}
-cp -p target/%{name}-%{version}.jar $RPM_BUILD_ROOT%{_javadir}/%{name}.jar
+%mvn_install
 
-# poms
-install -d -m 755 $RPM_BUILD_ROOT%{_mavenpomdir}
-install -m 644 pom.xml $RPM_BUILD_ROOT%{_mavenpomdir}/JPP-%{name}.pom
-
-%add_maven_depmap -a qdox:qdox
-
-# javadoc
-mkdir -p $RPM_BUILD_ROOT%{_javadocdir}/%{name}
-cp -pr target/apidocs/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
-
-%files
+%files -f .mfiles
 %doc LICENSE.txt README.txt
-%{_javadir}/%{name}.jar
-%{_mavenpomdir}/*
-%{_mavendepmapfragdir}/*
 
-%files javadoc
+%files javadoc -f .mfiles-javadoc
 %doc LICENSE.txt
-%doc %{_javadocdir}/%{name}
 
 %changelog
+* Mon Oct 27 2014 Mikolaj Izdebski <mizdebsk@redhat.com> - 0:2.0-1.M2
+- Update to upstream version 2.0-M2
+
+* Sun Jun 08 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0:1.12.1-10
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Thu May 29 2014 Mikolaj Izdebski <mizdebsk@redhat.com> - 0:1.12.1-9
+- Build with %%mvn_build
+
+* Tue Mar 04 2014 Stanislav Ochotnicky <sochotnicky@redhat.com> - 0:1.12.1-8
+- Use Requires: java-headless rebuild (#1067528)
+
 * Mon Aug 12 2013 akurtakov <akurtakov@localhost.localdomain> 0:1.12.1-7
 - Fix FTBFS bug#993187 .
 
@@ -281,3 +218,4 @@ cp -pr target/apidocs/* $RPM_BUILD_ROOT%{_javadocdir}/%{name}
 
 * Tue Feb 24 2004 Ralph Apel <r.apel at r-apel.de> - 0:1.3-1jpp
 - First JPackage release
+
