@@ -7,7 +7,7 @@ Version:        2.0
 Release:        0.1.%{vertag}.1
 Epoch:          0
 License:        ASL 2.0
-URL:            http://qdox.codehaus.org/
+URL:            https://qdox.codehaus.org/
 Group:		Development/Java
 Source0:        http://repo2.maven.org/maven2/com/thoughtworks/qdox/qdox/%{version}-%{vertag}/%{name}-%{version}-%{vertag}-project.tar.gz
 Source1:        qdox-MANIFEST.MF
